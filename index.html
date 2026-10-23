@@ -1,9 +1,151 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>Sawbban Hasan — App Developer</title></head>
-<body style="font-family:sans-serif;background:#0b0f19;color:#e8eaf2;text-align:center;padding:48px 16px">
-<h1>Sawbban Hasan</h1>
-<p>Developer of VidoPlay, Billi Master, Burger Raja, Chibi Parkour 3D, RunZone: Mini Games, Patri Dash 3D and Egg Stealer 3D.</p>
-<p>Contact: via the developer email on each app's Google Play page.</p>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sawbban Hasan — App Developer</title>
+<meta name="description" content="Official developer website of Sawbban Hasan — creator of VidoPlay, Billi Master, Burger Raja, Chibi Parkour 3D, RunZone: Mini Games and Patri Dash 3D.">
+<style>
+  :root{
+    --bg:#0b0f19;
+    --card:#131a2b;
+    --card-border:#232e47;
+    --text:#e8eaf2;
+    --muted:#9aa5bf;
+    --accent:#7c5cff;
+    --accent-hover:#937dff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.55;
+    padding:56px 20px 40px;
+  }
+  .wrap{max-width:1020px;margin:0 auto}
+  header{text-align:center;margin-bottom:44px}
+  header h1{font-size:2.3rem;font-weight:800;letter-spacing:.2px}
+  header h1 span{color:var(--accent)}
+  header p{color:var(--muted);font-size:1.05rem;margin-top:10px;max-width:640px;margin-left:auto;margin-right:auto}
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(290px,1fr));
+    gap:20px;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:16px;
+    padding:26px 24px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    transition:transform .15s ease,border-color .15s ease;
+  }
+  .card:hover{transform:translateY(-3px);border-color:var(--accent)}
+  .badge{
+    width:52px;height:52px;border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.5rem;font-weight:800;color:#ffffff;
+  }
+  .b-vidoplay{background:linear-gradient(135deg,#7c5cff,#00c2ff)}
+  .b-billi{background:linear-gradient(135deg,#00b894,#00cec9)}
+  .b-burger{background:linear-gradient(135deg,#e17055,#fdcb6e)}
+  .b-chibi{background:linear-gradient(135deg,#e84393,#fd79a8)}
+  .b-runzone{background:linear-gradient(135deg,#00b894,#55efc4)}
+  .b-patri{background:linear-gradient(135deg,#0984e3,#74b9ff)}
+  .card h2{font-size:1.2rem;font-weight:700}
+  .card p{color:var(--muted);font-size:.95rem;flex:1}
+  .btn{
+    display:inline-block;text-align:center;
+    background:var(--accent);color:#ffffff;text-decoration:none;
+    font-weight:600;font-size:.95rem;
+    padding:11px 18px;border-radius:10px;
+    transition:background .15s ease;
+  }
+  .btn:hover{background:var(--accent-hover)}
+  footer{
+    margin-top:48px;padding-top:24px;
+    border-top:1px solid var(--card-border);
+    text-align:center;color:var(--muted);font-size:.9rem;
+  }
+  footer p{margin-bottom:10px}
+  footer a{color:#a9b8dd;text-decoration:none}
+  footer a:hover{text-decoration:underline}
+  .policy-links{line-height:2}
+  @media (max-width:480px){
+    header h1{font-size:1.8rem}
+    body{padding:40px 14px 32px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Sawbban Hasan <span>— App Developer</span></h1>
+    <p>Independent Android developer making simple, fun apps and games — a full-featured video &amp; music player and a family of easy-to-play 3D games.</p>
+  </header>
+
+  <main class="grid">
+
+    <article class="card">
+      <div class="badge b-vidoplay">V</div>
+      <h2>VidoPlay Video &amp; Music Player</h2>
+      <p>Offline-first 4K/HD video and music player with gestures, subtitles, private vault and playlists.</p>
+      <a class="btn" href="https://play.google.com/store/apps/details?id=com.vidoplay.media">Get it on Google Play</a>
+    </article>
+
+    <article class="card">
+      <div class="badge b-billi">B</div>
+      <h2>Billi Master: Cat Logic Puzzle</h2>
+      <p>A cute cat logic puzzle game.</p>
+      <a class="btn" href="https://play.google.com/store/apps/details?id=com.billimaster.catlogic">Get it on Google Play</a>
+    </article>
+
+    <article class="card">
+      <div class="badge b-burger">B</div>
+      <h2>Burger Raja — Stack &amp; Run</h2>
+      <p>Stack the tallest burger and run.</p>
+      <a class="btn" href="https://play.google.com/store/apps/details?id=com.burgerraja.stackrun">Get it on Google Play</a>
+    </article>
+
+    <article class="card">
+      <div class="badge b-chibi">C</div>
+      <h2>Chibi Parkour 3D</h2>
+      <p>3D parkour racing with cute chibi runners.</p>
+      <a class="btn" href="https://play.google.com/store/apps/details?id=com.chibiparkour.race">Get it on Google Play</a>
+    </article>
+
+    <article class="card">
+      <div class="badge b-runzone">R</div>
+      <h2>RunZone: Mini Games</h2>
+      <p>A bundle of fun 3D mini running games.</p>
+      <a class="btn" href="https://play.google.com/store/apps/details?id=com.runzone.minigames">Get it on Google Play</a>
+    </article>
+
+    <article class="card">
+      <div class="badge b-patri">P</div>
+      <h2>Patri Dash 3D</h2>
+      <p>A fast 3D railway-track dash runner.</p>
+      <a class="btn" href="https://play.google.com/store/apps/details?id=com.patridash.game">Get it on Google Play</a>
+    </article>
+
+  </main>
+
+  <footer>
+    <p>Contact: via the developer email on each app's Google Play page.</p>
+    <p class="policy-links">Privacy: each app's privacy policy is available on its Google Play page —
+      <a href="https://play.google.com/store/apps/details?id=com.vidoplay.media">VidoPlay</a> ·
+      <a href="https://play.google.com/store/apps/details?id=com.billimaster.catlogic">Billi Master</a> ·
+      <a href="https://play.google.com/store/apps/details?id=com.burgerraja.stackrun">Burger Raja</a> ·
+      <a href="https://play.google.com/store/apps/details?id=com.chibiparkour.race">Chibi Parkour 3D</a> ·
+      <a href="https://play.google.com/store/apps/details?id=com.runzone.minigames">RunZone</a> ·
+      <a href="https://play.google.com/store/apps/details?id=com.patridash.game">Patri Dash 3D</a>
+    </p>
+  </footer>
+
+</div>
 </body>
 </html>
