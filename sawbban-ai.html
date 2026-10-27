@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sawbban AI — Independent Assistant</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #f2f0eb; color: #1f2937; }
+  header { background: #0f766e; color: #fff; padding: 16px; text-align: center; }
+  header h1 { margin: 0; font-size: 26px; }
+  header p { margin: 6px 0 0; font-size: 14px; opacity: 0.95; }
+  .banner { background: #fef3c7; border-left: 5px solid #d97706; margin: 12px; padding: 12px 14px; border-radius: 8px; font-size: 14px; line-height: 1.6; }
+  #chat { max-width: 720px; margin: 0 auto; padding: 12px 12px 8px; min-height: 300px; }
+  .msg { max-width: 85%; padding: 10px 13px; border-radius: 14px; margin: 8px 0; line-height: 1.6; font-size: 15px; white-space: pre-wrap; word-wrap: break-word; }
+  .user { background: #0f766e; color: #fff; margin-left: auto; border-bottom-right-radius: 4px; }
+  .bot { background: #ffffff; border: 1px solid #d6d3d1; margin-right: auto; border-bottom-left-radius: 4px; }
+  .copybtn { display: block; margin-top: 6px; font-size: 12px; background: #e7e5e4; border: 1px solid #d6d3d1; border-radius: 6px; padding: 3px 9px; cursor: pointer; }
+  .chips { max-width: 720px; margin: 0 auto; padding: 0 12px 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { background: #fff; border: 1px solid #0f766e; color: #0f766e; border-radius: 20px; padding: 6px 13px; font-size: 14px; cursor: pointer; }
+  .controls { max-width: 720px; margin: 0 auto; padding: 4px 12px 16px; display: flex; gap: 8px; }
+  #input { flex: 1; padding: 11px 13px; font-size: 15px; border: 1px solid #a8a29e; border-radius: 10px; }
+  button.send, button.tool { padding: 11px 14px; font-size: 14px; border-radius: 10px; border: none; cursor: pointer; }
+  button.send { background: #0f766e; color: #fff; }
+  button.tool { background: #e7e5e4; color: #1f2937; }
+  footer { text-align: center; font-size: 12px; color: #78716c; padding: 0 12px 20px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sawbban AI</h1>
+  <p>Apna independent assistant — seedha aapke device par</p>
+</header>
+
+<div class="banner"><b>Saaf baat:</b> Ye assistant poori tarah aapke device par chalta hai — bina internet, bina kisi API key, bina server ke. Ye bada AI model nahi hai; jo jaanta hai, wahi batata hai, aur jo nahi jaanta wo saaf keh deta hai.</div>
+
+<div id="chat"></div>
+
+<div class="chips">
+  <button class="chip" onclick="sendChip(this.dataset.text)" data-text="Tum kaun ho?">Tum kaun ho?</button>
+  <button class="chip" onclick="sendChip(this.dataset.text)" data-text="Abhi time kya hai?">Abhi time kya hai?</button>
+  <button class="chip" onclick="sendChip(this.dataset.text)" data-text="12 + 5 kitna hota hai?">12 + 5 = ?</button>
+  <button class="chip" onclick="sendChip(this.dataset.text)" data-text="Ek joke sunao">Ek joke sunao</button>
+  <button class="chip" onclick="sendChip(this.dataset.text)" data-text="Motivation do">Motivation do</button>
+  <button class="chip" onclick="sendChip(this.dataset.text)" data-text="Meri notes dikhao">Meri notes dikhao</button>
+</div>
+
+<div class="controls">
+  <input id="input" type="text" placeholder="Apna sawal likhein..." autocomplete="off">
+  <button class="send" onclick="sendUser()">Bhejo</button>
+  <button class="tool" onclick="newChat()">Nayi Chat</button>
+  <button class="tool" onclick="clearChat()">Chat Saaf Karo</button>
+</div>
+
+<footer>Ye assistant koi server ya internet istemal nahi karta. Aapki chat aur notes sirf isi browser me save hote hain.</footer>
+
+<script>
+var NOTES_KEY = 'sawbban_ai_notes_v1';
+var HIST_KEY = 'sawbban_ai_history_v1';
+
+function loadNotes() {
+  try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '[]'); } catch (e) { return []; }
+}
+function saveNotes(n) { try { localStorage.setItem(NOTES_KEY, JSON.stringify(n)); } catch (e) {} }
+function loadHist() {
+  try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch (e) { return []; }
+}
+function saveHist(h) { try { localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(-100))); } catch (e) {} }
+
+function addMsg(role, text) {
+  var box = document.getElementById('chat');
+  var d = document.createElement('div');
+  d.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
+  d.textContent = text;
+  if (role === 'bot') {
+    var b = document.createElement('button');
+    b.className = 'copybtn';
+    b.textContent = 'Copy';
+    b.onclick = function () { copyText(text, b); };
+    d.appendChild(b);
+  }
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+function copyText(t, btn) {
+  function done() { if (btn) { btn.textContent = 'Copy ho gaya'; setTimeout(function () { btn.textContent = 'Copy'; }, 1500); } }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).then(done, function () { fallbackCopy(t); done(); });
+  } else { fallbackCopy(t); done(); }
+}
+function fallbackCopy(t) {
+  try {
+    var ta = document.createElement('textarea');
+    ta.value = t;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  } catch (e) {}
+}
+
+/* ---------- text helpers ---------- */
+var DEVA = {'०':'0','१':'1','२':'2','३':'3','४':'4','५':'5','६':'6','७':'7','८':'8','९':'9'};
+function norm(s) {
+  return s.replace(/[०-९]/g, function (c) { return DEVA[c]; });
+}
+function clean(s) {
+  return norm(s).toLowerCase().replace(/[।?!.,;:]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function esc(s) { return s; } /* textContent already escapes; kept for clarity */
+
+/* ---------- time / date (device clock, Asia/Kolkata) ---------- */
+function timeStr() {
+  try {
+    return new Intl.DateTimeFormat('hi-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true }).format(new Date());
+  } catch (e) { return new Date().toLocaleTimeString(); }
+}
+function dateStr() {
+  try {
+    return new Intl.DateTimeFormat('hi-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+  } catch (e) { return new Date().toLocaleDateString(); }
+}
+
+/* ---------- safe calculator (no eval) ---------- */
+var HNUM = { 'shunya':0, 'sunn':0, 'ek':1, 'do':2, 'teen':3, 'chaar':4, 'char':4, 'paanch':5, 'panch':5, 'chhah':6, 'chah':6, 'saat':7, 'sat':7, 'aath':8, 'nau':9, 'das':10, 'gyarah':11, 'barah':12, 'terah':13, 'chaudah':14, 'pandrah':15, 'solah':16, 'satrah':17, 'atharah':18, 'unnees':19, 'unnis':19, 'bees':20 };
+var HOP = { 'jod':'+', 'jama':'+', 'plus':'+', 'add':'+', 'ghata':'-', 'minus':'-', 'kam':'-', 'guna':'*', 'gunan':'*', 'multiply':'*', 'bhag':'/', 'divide':'/' };
+function wordsToMath(t) {
+  var w = t.split(' ');
+  for (var i = 0; i < w.length; i++) {
+    if (HNUM.hasOwnProperty(w[i])) { w[i] = String(HNUM[w[i]]); }
+    else if (HOP.hasOwnProperty(w[i])) { w[i] = HOP[w[i]]; }
+    else if (w[i] === 'x' || w[i] === 'X') { w[i] = '*'; }
+  }
+  return w.join(' ');
+}
+function tokenize(expr) {
+  var toks = [], i = 0;
+  while (i < expr.length) {
+    var c = expr[i];
+    if (c === ' ') { i++; continue; }
+    if ('+-*/%()'.indexOf(c) >= 0) { toks.push(c); i++; continue; }
+    if (/[0-9.]/.test(c)) {
+      var j = i;
+      while (j < expr.length && /[0-9.]/.test(expr[j])) { j++; }
+      toks.push(parseFloat(expr.slice(i, j))); i = j; continue;
+    }
+    return null;
+  }
+  return toks;
+}
+function parseCalc(toks) {
+  var pos = 0;
+  function peek() { return toks[pos]; }
+  function next() { return toks[pos++]; }
+  function factor() {
+    var t = peek();
+    if (t === '-') { next(); return -factor(); }
+    if (t === '(') { next(); var v = expr(); if (peek() === ')') { next(); } return v; }
+    if (typeof t === 'number') { next(); return t; }
+    throw new Error('bad');
+  }
+  function term() {
+    var v = factor();
+    while (peek() === '*' || peek() === '/' || peek() === '%') {
+      var op = next(); var r = factor();
+      if (op === '*') { v = v * r; }
+      else if (op === '/') { if (r === 0) { throw new Error('zero'); } v = v / r; }
+      else { v = v % r; }
+    }
+    return v;
+  }
+  function expr() {
+    var v = term();
+    while (peek() === '+' || peek() === '-') {
+      var op = next(); var r = term();
+      v = (op === '+') ? v + r : v - r;
+    }
+    return v;
+  }
+  var out = expr();
+  if (pos !== toks.length) { throw new Error('bad'); }
+  return out;
+}
+function tryCalc(raw) {
+  var t = clean(raw);
+  var m = t.match(/(\d+(?:\.\d+)?)\s*(ka|of)?\s*(\d+(?:\.\d+)?)\s*(%|pratishat|percent)/);
+  if (m) {
+    var base = parseFloat(m[1]), pct = parseFloat(m[3]);
+    return (base * pct / 100);
+  }
+  var m2 = t.match(/(\d+(?:\.\d+)?)\s*%\s*(ka|of)\s*(\d+(?:\.\d+)?)/);
+  if (m2) {
+    return (parseFloat(m2[3]) * parseFloat(m2[1]) / 100);
+  }
+  var filler = ['kitna', 'hota', 'hai', 'hain', 'batao', 'batayo', 'calculate', 'hisab', 'kya', 'jawaab', 'jawab', 'zara', 'please', 'kar', 'karo', 'nikalo'];
+  var words = t.split(' ').filter(function (w) { return filler.indexOf(w) < 0; });
+  var conv = wordsToMath(words.join(' '));
+  if (!/^[\d\s+\-*/%().]+$/.test(conv)) { return null; }
+  if (!/[+\-*/%]/.test(conv)) { return null; }
+  var nums = conv.match(/\d+(?:\.\d+)?/g) || [];
+  if (nums.length < 2) { return null; }
+  var toks = tokenize(conv);
+  if (!toks) { return null; }
+  try { return parseCalc(toks); } catch (e) { return null; }
+}
+function fmtNum(v) {
+  if (!isFinite(v)) { return null; }
+  var r = Math.round(v * 1000000) / 1000000;
+  return String(r);
+}
+
+/* ---------- built-in content ---------- */
+var JOKES = [
+  'Teacher: Agar tumhare paas 10 aam hon aur tum 3 kha lo, to kya bachega?\nBaccha: Sir, pet dard!',
+  'Ek aadmi doctor se bola: Mujhe bhoolne ki bimari hai.\nDoctor: Kab se?\nAadmi: Kab se kya?',
+  'Baccha: Papa, main bada hokar bahut bada aadmi banunga.\nPapa: Pehle homework to poora kar lo, bade aadmi!'
+];
+var MOTIV = [
+  'Chhote kadam bhi manzil tak le jaate hain — bas rukna mat.',
+  'Aaj ki mehnat kal ki aasani ban jaati hai.',
+  'Galti karna bura nahi hai; galti se seekhna chhod dena bura hai.',
+  'Sapne bade rakho, shuruaat chhoti se karo.'
+];
+var jokeI = 0, motI = 0;
+
+function capabilities() {
+  return 'Main ye sab kar sakta hoon:\n' +
+    '• Namaste / greeting ka jawab\n' +
+    '• Abhi ka time aur aaj ki tarikh batana\n' +
+    '• Hisab-kitab: jaise 12+5, 25 ka 20%\n' +
+    '• Notes yaad rakhna: "yaad rakho ki ..." likhein, phir "kya yaad hai?" poochhein\n' +
+    '• Joke aur motivation sunana\n' +
+    '• Apne baare me sach batana\n' +
+    'Jo main nahi jaanta, wo main saaf keh dunga — andaza nahi lagaunga.';
+}
+
+/* ---------- the brain ---------- */
+function getReply(raw) {
+  var t = clean(raw);
+  if (!t) { return 'Kuch likhein to sahi — sawal, hisab, ya "madad" likhkar dekhein.'; }
+
+  /* notes: clear first */
+  if (t.indexOf('bhool jao') >= 0 || t.indexOf('notes saaf') >= 0 || t.indexOf('notes mita') >= 0 || t.indexOf('sab bhool') >= 0) {
+    saveNotes([]);
+    return 'Theek hai, saari notes bhool gaya hoon. Ab koi note save nahi hai.';
+  }
+  /* notes: save */
+  var sm = norm(raw).match(/^\s*yaad rakho(\s+ki)?\s+(.+?)\s*$/i);
+  if (sm) {
+    var note = sm[2].trim().slice(0, 500);
+    if (!note) { return 'Kya yaad rakhun? "Yaad rakho ki ..." ke baad wo baat bhi likhein.'; }
+    var notes = loadNotes();
+    notes.push(note);
+    if (notes.length > 50) { notes = notes.slice(-50); }
+    saveNotes(notes);
+    return 'Yaad rakh liya: "' + note + '"\nYe note sirf isi browser me save hua hai.';
+  }
+  /* notes: list */
+  if (t.indexOf('yaad hai') >= 0 || t.indexOf('notes dikhao') >= 0 || t.indexOf('meri notes') >= 0 || t.indexOf('notes batao') >= 0 || t.indexOf('kya yaad') >= 0) {
+    var ns = loadNotes();
+    if (!ns.length) { return 'Abhi koi note save nahi hai. Koi baat yaad rakhni ho to likhein: "Yaad rakho ki ..."'; }
+    return 'Aapki notes:\n' + ns.map(function (n, i) { return (i + 1) + '. ' + n; }).join('\n');
+  }
+
+  /* date / time */
+  if (/(tarikh|date|aaj.*din|kaun sa din|kis din)/.test(t)) {
+    return 'Aaj ki tarikh: ' + dateStr() + '.\n(Ye aapke device ki ghadi ke hisaab se hai.)';
+  }
+  if (/(time|samay|baje|baj raha)/.test(t)) {
+    return 'Abhi time: ' + timeStr() + '.\n(Ye aapke device ki ghadi ke hisaab se hai, Asia/Kolkata time zone me.)';
+  }
+
+  /* calculator */
+  var cv = tryCalc(raw);
+  if (cv !== null) {
+    var f = fmtNum(cv);
+    if (f === null) { return 'Ye hisab nahi ho paya — shayad zero se bhag diya gaya hai. Dobara koshish karein.'; }
+    return 'Jawab: ' + f;
+  }
+
+  /* greeting */
+  if (/^(namaste|namaskar|hello|hi|hey|good morning|good afternoon|good evening|sat sri akal)\b/.test(t)) {
+    return 'Namaste! Main Sawbban AI hoon. Aap kya karna chahte hain? "Madad" likhein to main apni poori list bata dunga.';
+  }
+
+  /* identity / how it works / honest limits */
+  if (/(tum kaun|tumhara naam|tera naam|aapka naam|tum naam)/.test(t) || t.indexOf('tum kya ho') >= 0) {
+    return 'Main Sawbban AI hoon — ek independent local assistant.\nMain aapke device par, isi browser me chalta hoon. Na mujhe server chahiye, na internet, na koi key. Main bada AI model nahi hoon; jo jaanta hoon wahi batata hoon, aur jo nahi jaanta wo saaf keh deta hoon.';
+  }
+  if (/(kisne banaya|tumhe kisne|tumhara malik|tum kiske)/.test(t)) {
+    return 'Mujhe Sawbban ke liye banaya gaya hai — ek aisa assistant jo poori tarah independent ho, bina kisi server ya key ke, seedha aapke device par chale.';
+  }
+  if (/(kaise kaam|kaam karte|bina internet|internet ke bina|tum kahan rehte|tum kahan ho)/.test(t)) {
+    return 'Main isi page ke andar chalta hoon. Aap jo likhte hain, wahi isi browser me samjha jaata hai aur jawab ban jaata hai. Aapki baat-cheet aur notes kahi bahar nahi jaate — sab kuch isi browser me rehta hai.';
+  }
+  if (/(asli ai|bade model|sach me ai|tum sach|real ai)/.test(t)) {
+    return 'Saaf jawab: main ek chhota local assistant hoon, bada language model nahi hoon. Isliye har sawal ka jawab mere paas nahi hai. Par time, tarikh, hisab, notes, joke aur motivation jaise kaam main turant aur sahi-sahi kar deta hoon.';
+  }
+
+  /* help */
+  if (/(madad|help|kya kar sakte|tum kya kya|tumhare kaam|kya kya jaante)/.test(t)) {
+    return capabilities();
+  }
+
+  /* jokes */
+  if (/(joke|hasao|hansi|mazak|funny)/.test(t)) {
+    var j = JOKES[jokeI % JOKES.length]; jokeI++;
+    return j;
+  }
+
+  /* motivation */
+  if (/(motivation|prerna|himmat|udaas|haar gaya|inspire)/.test(t)) {
+    var m = MOTIV[motI % MOTIV.length]; motI++;
+    return m;
+  }
+
+  /* thanks */
+  if (/(dhanyavad|shukriya|thanks|thank you)/.test(t)) {
+    return 'Khushamdeed! Aur kuch chahiye to bas likh dein.';
+  }
+
+  /* bye */
+  if (/(alvida|bye|phir milenge|good night|shubh ratri)/.test(t)) {
+    return 'Phir milenge! Aapki notes isi browser me mehfooz rahengi.';
+  }
+
+  /* fallback: never hallucinate */
+  return 'Ye main abhi nahi jaanta. Main ek chhota local assistant hoon, bada model nahi — isliye har sawal ka jawab mere paas nahi hai, aur andaza lagakar galat jawab dena mujhe manzoor nahi.\n\n' + capabilities();
+}
+
+/* ---------- chat flow ---------- */
+function renderHistory() {
+  var h = loadHist();
+  var box = document.getElementById('chat');
+  box.textContent = '';
+  if (!h.length) {
+    addMsg('bot', 'Namaste! Main Sawbban AI hoon — aapka independent assistant, jo poori tarah isi device par chalta hai, bina internet aur bina key ke.\n\nKuch aazma kar dekhein: time poochhein, hisab karein, ya "yaad rakho ki ..." likhkar koi note save karein. "Madad" likhne par poori list mil jayegi.');
+    return;
+  }
+  h.forEach(function (m) { addMsg(m.role, m.text); });
+}
+function sendUser() {
+  var inp = document.getElementById('input');
+  var text = inp.value.trim();
+  if (!text) { return; }
+  inp.value = '';
+  handleSend(text);
+}
+function sendChip(text) { handleSend(text); }
+function handleSend(text) {
+  addMsg('user', text);
+  var hist = loadHist();
+  hist.push({ role: 'user', text: text });
+  var reply = getReply(text);
+  addMsg('bot', reply);
+  hist.push({ role: 'bot', text: reply });
+  saveHist(hist);
+}
+function newChat() {
+  saveHist([]);
+  renderHistory();
+  var inp = document.getElementById('input');
+  if (inp) { inp.focus(); }
+}
+function clearChat() {
+  saveHist([]);
+  var box = document.getElementById('chat');
+  box.textContent = '';
+}
+document.addEventListener('DOMContentLoaded', function () {
+  renderHistory();
+  var inp = document.getElementById('input');
+  inp.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { sendUser(); }
+  });
+});
+</script>
+</body>
+</html>
